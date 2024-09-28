@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+## All data files
+CaseNumber.html
+CaseNumber.csv
+Records/
+
 # C extensions
 *.so
 
