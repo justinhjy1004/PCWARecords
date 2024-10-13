@@ -7,6 +7,7 @@ __pycache__/
 CaseNumber.html
 CaseNumber.csv
 Records/
+*.db
 
 # C extensions
 *.so

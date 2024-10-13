@@ -1,31 +1,60 @@
 import pytesseract
 from pdf2image import convert_from_path
 import re
-import concurrent.futures
+import multiprocessing
 import glob
 import os
+import pandas as pd
 
-def pdf_to_text_ocr(pdf_paths):
+def split(a, n):
+    k, m = divmod(len(a), n)
+    return (a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n))
 
-    for pdf_path in pdf_paths:
+def pdf_to_text_ocr(case_number_list):
 
-        images = convert_from_path(pdf_path)
-        text = ""
-        
-        for image in images:
-            text += pytesseract.image_to_string(image)
+    for case_number in case_number_list:
 
-        text_file_path = re.sub("pdf", "txt", pdf_path)
+        print("working on " + case_number)
 
-        with open(text_file_path, "w") as text_file:
-            text_file.write(text)
+        pdf_paths = glob.glob("./Records/" + case_number + "/*.pdf")
+
+        for pdf_path in pdf_paths:
+
+            text_file_path = re.sub("pdf", "txt", pdf_path)
+
+            if not os.path.isfile(text_file_path):
+
+                images = convert_from_path(pdf_path)
+                text = ""
+
+                for image in images:
+                    text += pytesseract.image_to_string(image)
+
+                with open(text_file_path, "w") as text_file:
+                    text_file.write(text)
+
+                #print("Just Processed: " + text_file_path)
 
 if __name__ == '__main__':
 
-    cases = os.listdir("./Records/")
+    df = pd.read_csv("CaseNumber.csv")
+    cases = df["CaseNumber"].to_list()
 
-    paths = [glob.glob("./Records/" + case + "/*.pdf") for case in cases]
+    cases = [case for case in cases if len(glob.glob("./Records/" + case + "/*.txt")) == 0]
 
-    executor = concurrent.futures.ProcessPoolExecutor(16)
-    futures = [executor.submit(pdf_to_text_ocr, p) for p in paths]
-    concurrent.futures.wait(futures)
+    N = 8
+
+    cases = split(cases, N)
+
+    processes = []
+
+    for c in cases:
+        processes.append(multiprocessing.Process(target=pdf_to_text_ocr, args=(c, )))
+
+    for p in processes:
+        p.start()
+
+    for p in processes:
+        p.join()
+
+   
