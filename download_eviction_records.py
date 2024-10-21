@@ -17,7 +17,7 @@ async def run(case_numbers: list[str]):
         browser = await chromium.launch(headless=False, timeout=0)
         page = await browser.new_page()
 
-        scraped_cases = os.listdir("./RecordsLong/")
+        scraped_cases = os.listdir("./Records/")
         scraped_cases = [ s.replace(".zip", "") for s in scraped_cases ]
 
         await page.goto("https://linxonline.co.pierce.wa.us")
@@ -42,20 +42,26 @@ async def run(case_numbers: list[str]):
                     download = await download_info.value
                     print("Saved!")
                     # Wait for the download process to complete and save the downloaded file somewhere
-                    await download.save_as("./RecordsLong/" + c + ".zip")
+                    await download.save_as("./Records/" + c + ".zip")
                 
                 except:
+                    
                     print("Timeout")
                     logging.debug(c)
                 
-                
-
         await browser.close()
 
 async def main():
 
-    df = pd.read_csv("output_file.txt")
+    df = pd.read_csv("CaseNumber.csv")
 
-    await run(df["CaseNumber"].to_list())
+    scraped_cases = os.listdir("./Records/")
+    scraped_cases = [ s.replace(".zip", "") for s in scraped_cases ]
+
+    cases_left = [c for c in df["CaseNumber"].to_list() if c not in scraped_cases]
+
+    print("We have ", len(cases_left), " left!") 
+
+    await run(cases_left)
 
 asyncio.run(main())
