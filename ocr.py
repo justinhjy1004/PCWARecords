@@ -32,68 +32,71 @@ def pdf_to_text_ocr(case_number_list):
 
     for c in case_number_list:
 
-        with ZipFile(f"./Records/{c}.zip", mode = "r") as zip_case:
+        try:
+            with ZipFile(f"./Records/{c}.zip", mode = "r") as zip_case:
 
-            file = zip_case.open(f"{c}.htm",'r').read()
+                file = zip_case.open(f"{c}.htm",'r').read()
 
-            soup = BeautifulSoup( file, "html.parser" )
-            tds = soup.select('td')
+                soup = BeautifulSoup( file, "html.parser" )
+                tds = soup.select('td')
 
-            tds = soup.select('td')
+                tds = soup.select('td')
 
-            for td in tds :
-                
-                if re.search("summons", td.text, re.IGNORECASE):
-
-                    summons = td
-                    objs = list(summons.parent)
-
-                    summons_path = objs[1].find_all("a", href=True)[0]["href"]
-                    summons_path = zip_case.extract(summons_path)
+                for td in tds :
                     
-                    summons_text = convert_to_text(summons_path)
+                    if re.search("summons", td.text, re.IGNORECASE):
 
-                    with open(f"./Records/{c}_summons.txt", "w") as summons_file:
-                        summons_file.write(summons_text)
+                        summons = td
+                        objs = list(summons.parent)
 
-                    os.remove(summons_path)
+                        summons_path = objs[1].find_all("a", href=True)[0]["href"]
+                        summons_path = zip_case.extract(summons_path)
+                        
+                        summons_text = convert_to_text(summons_path)
 
-                if re.search("complaint", td.text, re.IGNORECASE):
+                        with open(f"./Records/{c}_summons.txt", "w") as summons_file:
+                            summons_file.write(summons_text)
 
-                    complaint = td
-                    objs = list(complaint.parent)
+                        os.remove(summons_path)
 
-                    complaint_path = objs[1].find_all("a", href=True)[0]["href"]
-                    complaint_path = zip_case.extract(complaint_path)
-                    
-                    complaint_text = convert_to_text(complaint_path)
+                    if re.search("complaint", td.text, re.IGNORECASE):
 
-                    with open(f"./Records/{c}_complaint.txt", "w") as complaint_file:
-                        complaint_file.write(complaint_text)
+                        complaint = td
+                        objs = list(complaint.parent)
 
-                    os.remove(complaint_path)
+                        complaint_path = objs[1].find_all("a", href=True)[0]["href"]
+                        complaint_path = zip_case.extract(complaint_path)
+                        
+                        complaint_text = convert_to_text(complaint_path)
 
-                if re.search("return on writ", td.text, re.IGNORECASE):
+                        with open(f"./Records/{c}_complaint.txt", "w") as complaint_file:
+                            complaint_file.write(complaint_text)
 
-                    writ = td
-                    objs = list(writ.parent)
+                        os.remove(complaint_path)
 
-                    writ_path = objs[1].find_all("a", href=True)[0]["href"]
-                    writ_path = zip_case.extract(writ_path)
-                    
-                    writ_text = convert_to_text(writ_path)
+                    if re.search("return on writ", td.text, re.IGNORECASE):
 
-                    with open(f"./Records/{c}_writ.txt", "w") as writ_file:
-                        writ_file.write(writ_text)
-                    
-                    os.remove(writ_path)
+                        writ = td
+                        objs = list(writ.parent)
+
+                        writ_path = objs[1].find_all("a", href=True)[0]["href"]
+                        writ_path = zip_case.extract(writ_path)
+                        
+                        writ_text = convert_to_text(writ_path)
+
+                        with open(f"./Records/{c}_writ.txt", "w") as writ_file:
+                            writ_file.write(writ_text)
+                        
+                        os.remove(writ_path)
+        except:
+            print(f"Error in {c}!")
 
 if __name__ == '__main__':
     
     df = pd.read_csv("CaseNumber.csv")
     cases = df["CaseNumber"].to_list()
 
-    processed_cases = [file[:12] for file in os.listdir("./Records") if file.endswith(".txt")]
+    processed_cases = [file[:12] for file in os.listdir("./Records") if file.endswith("writ.txt")]
     processed_cases = list(set(processed_cases))
 
     cases = [c for c in cases if c not in processed_cases] 
